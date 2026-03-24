@@ -100,10 +100,13 @@
                                                 'status'       => $requestItem->status,
                                                 'needed_by'    => optional($requestItem->needed_by)->format('m/d/Y'),
                                                 'note'         => $requestItem->note,
-                                                'created_at'   => optional($requestItem->created_at)->format('m/d/Y H:i'),
-                                                'completed_file' => $requestItem->completed_file,
+                                                'created_at'   => optional($requestItem->created_at)->setTimezone('Asia/Manila')->format('m/d/Y H:i'),
+                                                'completed_file' => $requestItem->completed_file
+                                                    ? asset('storage/' . $requestItem->completed_file)
+                                                    : null,
                                                 'prepared_by'  => $requestItem->prepared_by,
                                                 'expiration_at'=> optional($requestItem->expiration_at)->format('m/d/Y H:i'),
+                                                'expired'      => $requestItem->expiration_at && $requestItem->expiration_at->isPast(),
                                             ]))"
                                         >
                                             ⚙️
@@ -184,7 +187,7 @@
                                 <strong>Expires At:</strong>
                                 <span x-text="selected.expiration_at || '—'"></span>
                             </p>
-                            <template x-if="selected.completed_file">
+                            <template x-if="selected.completed_file && !selected.expired">
                                 <a
                                     :href="selected.completed_file"
                                     target="_blank"
@@ -192,6 +195,11 @@
                                 >
                                     Download File
                                 </a>
+                            </template>
+                            <template x-if="selected.expired">
+                                <p class="text-sm text-red-600 font-semibold mt-2">
+                                    This request has expired. The file is no longer available.
+                                </p>
                             </template>
                         </div>
                     </div>

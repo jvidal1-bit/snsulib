@@ -7,6 +7,7 @@ use App\Models\Book;
 use App\Models\BookRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class RequestController extends Controller
 {
@@ -48,10 +49,29 @@ class RequestController extends Controller
 
         $requests = BookRequest::with('book')
             ->where('user_id', $studentId)
-            ->orderBy('created_at', 'desc') // latest first for overview
-            ->get();
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($r) => [
+                'id'             => $r->id,
+                'isbn'           => $r->book->isbn ?? '—',
+                'title'          => $r->book->title ?? 'Unknown Title',
+                'chapter'        => $r->chapter ?? '—',
+                'status'         => $r->status,
+                'date'           => optional($r->created_at)->format('m/d/y'),
+                'purpose'        => $r->purpose,
+                'note'           => $r->note,
+                'needed_by'      => optional($r->needed_by)->format('m/d/Y'),
+                'created_at'     => optional($r->created_at)->setTimezone('Asia/Manila')->format('m/d/Y H:i'),
+                'prepared_by'    => $r->prepared_by,
+                'expiration_at'  => optional($r->expiration_at)->format('m/d/Y H:i'),
+                'completed_file' => $r->completed_file ? asset('storage/' . $r->completed_file) : null,
+                'expired'        => $r->expiration_at && $r->expiration_at->isPast(),
+            ]);
 
-        return view('student.requests.index', compact('requests'));
+        return Inertia::render('Student/Requests', [
+            'requests' => $requests,
+            'authName' => Auth::user()->name ?? 'Student',
+        ]);
     }
 
     public function pending()

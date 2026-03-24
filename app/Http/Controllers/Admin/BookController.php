@@ -7,6 +7,9 @@ use App\Models\Book;
 use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+
 class BookController extends Controller
 {
     /**
@@ -15,25 +18,43 @@ class BookController extends Controller
     public function index(Request $request)
     {
         $search = trim($request->input('q', ''));
-
         $query = Book::with('category');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('title', 'like', "%{$search}%")
-                  ->orWhere('author', 'like', "%{$search}%")
-                  ->orWhere('isbn', 'like', "%{$search}%");
+                ->orWhere('author', 'like', "%{$search}%")
+                ->orWhere('isbn', 'like', "%{$search}%");
             });
         }
 
-        $books = $query
-            ->orderBy('title')
-            ->paginate(15)
-            ->withQueryString();
+        $books = $query->orderBy('title')->paginate(15)->withQueryString()
+            ->through(fn($book) => [
+                'id'                => $book->id,
+                'isbn'              => $book->isbn,
+                'title'             => $book->title,
+                'author'            => $book->author,
+                'publisher'         => $book->publisher,
+                'year_published'    => $book->year_published,
+                'category'          => optional($book->category)->name,
+                'category_id'       => $book->category_id,
+                'total_pages'       => $book->total_pages,
+                'status'            => $book->status,
+                'description'       => $book->description,
+                'table_of_contents' => $book->table_of_contents,
+                'cover_url'         => $book->cover_path
+                    ? asset('storage/' . $book->cover_path)
+                    : null,
+            ]);
 
-        $categories = Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get(['id', 'name']);
 
-        return view('admin.books.index', compact('books', 'categories'));
+        return Inertia::render('Admin/Books', [
+            'books'      => $books,
+            'categories' => $categories,
+            'q'          => $search,
+            'authName'   => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
     /**
@@ -110,9 +131,28 @@ class BookController extends Controller
      */
     public function edit(Book $book)
     {
-        $categories = Category::orderBy('name')->get();
+        $categories = Category::orderBy('name')->get(['id', 'name']);
 
-        return view('admin.books.edit', compact('book', 'categories'));
+        return Inertia::render('Admin/BooksEdit', [
+            'book' => [
+                'id'                => $book->id,
+                'isbn'              => $book->isbn,
+                'title'             => $book->title,
+                'author'            => $book->author,
+                'publisher'         => $book->publisher,
+                'year_published'    => $book->year_published,
+                'category_id'       => $book->category_id,
+                'total_pages'       => $book->total_pages,
+                'status'            => $book->status,
+                'description'       => $book->description,
+                'table_of_contents' => $book->table_of_contents,
+                'cover_url'         => $book->cover_path
+                    ? asset('storage/' . $book->cover_path)
+                    : null,
+            ],
+            'categories' => $categories,
+            'authName'   => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
     /**

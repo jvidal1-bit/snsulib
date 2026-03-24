@@ -5,19 +5,21 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class LoginController extends Controller
 {
     public function showLoginForm()
     {
         if (Auth::check()) {
-        return Auth::user()->role === 'admin'
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('student.home');
-    }
+            return Auth::user()->role === 'admin'
+                ? redirect()->route('admin.dashboard')
+                : redirect()->route('student.home');
+        }
 
-
-        return view('auth.login');
+        return Inertia::render('Auth/Login', [
+            'old_login' => old('login', ''),
+        ]);
     }
 
     public function login(Request $request)

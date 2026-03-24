@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Student;
 use App\Http\Controllers\Controller;
 use App\Models\BookRequest;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        // TODO later: use Auth::id() once login is done
-        $studentId = Auth::id() ?? 1; // temporary test user
+        $studentId = Auth::id() ?? 1;
 
         $baseQuery = BookRequest::with('book')
             ->where('user_id', $studentId);
@@ -23,15 +23,23 @@ class HomeController extends Controller
             'completed'  => (clone $baseQuery)->where('status', 'completed')->count(),
         ];
 
-        // Latest 10 requests (any status)
         $recentRequests = (clone $baseQuery)
             ->latest()
             ->take(10)
-            ->get();
+            ->get()
+            ->map(fn($r) => [
+                'id'      => $r->id,
+                'isbn'    => $r->book->isbn ?? '—',
+                'title'   => $r->book->title ?? 'Unknown Title',
+                'chapter' => $r->chapter ?? '—',
+                'status'  => $r->status,
+                'date'    => optional($r->created_at)->format('m/d/y'),
+            ]);
 
-        return view('student.home', [
+        return Inertia::render('Student/Home', [
             'stats'          => $stats,
             'recentRequests' => $recentRequests,
+            'authName'       => Auth::user()->name ?? 'Student',
         ]);
     }
 }

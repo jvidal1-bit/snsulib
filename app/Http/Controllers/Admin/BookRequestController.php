@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
+use Inertia\Inertia;
 
 class BookRequestController extends Controller
 {
@@ -19,43 +20,35 @@ class BookRequestController extends Controller
     public function index(Request $request)
     {
         $search = trim($request->input('q', ''));
-        $status = $request->input('status');
-
         $query = BookRequest::with(['user', 'book.category']);
 
-        // Optional status filter
-        if ($status && in_array($status, ['pending', 'processing', 'completed'])) {
-            $query->where('status', $status);
-        }
-
-        // Full search: user, book, category, status
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                // Student name / email
-                $q->whereHas('user', function ($qUser) use ($search) {
-                    $qUser->where('name', 'like', "%{$search}%")
-                          ->orWhere('email', 'like', "%{$search}%");
-                });
-
-                // Book title / author
-                $q->orWhereHas('book', function ($qBook) use ($search) {
-                    $qBook->where('title', 'like', "%{$search}%")
-                          ->orWhere('author', 'like', "%{$search}%");
-                });
-
-                // Category name
-                $q->orWhereHas('book.category', function ($qCat) use ($search) {
-                    $qCat->where('name', 'like', "%{$search}%");
-                });
-
-                // Status
-                $q->orWhere('status', 'like', "%{$search}%");
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
+                ->orWhereHas('book', fn($b) => $b->where('title', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%"));
             });
         }
 
-        $requests = $query->latest()->paginate(10)->withQueryString();
+        $requests = $query->latest()->paginate(10)->withQueryString()
+            ->through(fn($req) => [
+                'id'           => $req->id,
+                'student'      => $req->user->name ?? 'Unknown',
+                'title'        => $req->book->title ?? 'Unknown Book',
+                'author'       => $req->book->author ?? '-',
+                'category'     => $req->book->category->name ?? '-',
+                'year_published' => $req->book->year_published ?? '-',
+                'cover_url'    => $req->book?->cover_path
+                    ? asset('storage/' . $req->book->cover_path)
+                    : null,
+                'has_book'     => $req->book !== null,
+            ]);
 
-        return view('admin.requests', compact('requests'));
+        return Inertia::render('Admin/Requests', [
+            'requests' => $requests,
+            'q'        => $search,
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
     /**
@@ -115,20 +108,37 @@ class BookRequestController extends Controller
      * (we'll build admin/requests/show.blade.php later if you want)
      */
     public function show(BookRequest $bookRequest)
-{
-    $bookRequest->load(['book.category', 'user']);
+    {
+        $bookRequest->load(['book.category', 'user']);
+        $book = $bookRequest->book;
 
-    $book = $bookRequest->book;
-
-    $coverUrl = $book && $book->cover_path
-        ? asset('storage/' . $book->cover_path)
-        : asset('assets/images/laravel-book.png'); // fallback
-
-    return view('admin.requests.show', [
-        'request'  => $bookRequest, // nicer variable name for Blade
-        'coverUrl' => $coverUrl,
-    ]);
-}
+        return Inertia::render('Admin/RequestShow', [
+            'bookRequest' => [
+                'id'             => $bookRequest->id,
+                'status'         => $bookRequest->status,
+                'chapter'        => $bookRequest->chapter,
+                'purpose'        => $bookRequest->purpose,
+                'note'           => $bookRequest->note ?? '',
+                'needed_by'      => optional($bookRequest->needed_by)->format('m/d/Y'),
+                'submitted_at'   => optional($bookRequest->created_at)->format('m/d/Y - g:i A'),
+                'expiration_at_raw' => optional($bookRequest->expiration_at)->format('Y-m-d'),
+                'completed_file' => $bookRequest->completed_file
+                    ? asset('storage/' . $bookRequest->completed_file)
+                    : null,
+                'student_name'   => $bookRequest->user->name ?? 'Unknown',
+                'student_email'  => $bookRequest->user->email ?? 'N/A',
+                'book_title'     => $book->title ?? 'Unknown Book',
+                'book_author'    => $book->author ?? 'N/A',
+                'book_category'  => $book->category->name ?? 'N/A',
+                'book_year'      => $book->year_published ?? 'N/A',
+                'book_isbn'      => $book->isbn ?? 'N/A',
+                'cover_url'      => $book?->cover_path
+                    ? asset('storage/' . $book->cover_path)
+                    : null,
+            ],
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
+    }
 
 
     /**
