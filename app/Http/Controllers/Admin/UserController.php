@@ -8,48 +8,77 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\StudentProfile;
 use Illuminate\Support\Facades\Hash;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+
 class UserController extends Controller
 {
+
     public function index(Request $request)
     {
         $search = trim($request->input('q', ''));
         $role   = $request->input('role');
-        $query = User::query();
-        $query = User::with('profile');
+        $query  = User::with('profile');
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('role', 'like', "%{$search}%");
+                ->orWhere('email', 'like', "%{$search}%");
             });
         }
-        if (!empty($role)) {
-        $query->where('role', $role);
+        if (!empty($role)) $query->where('role', $role);
+
+        $users = $query->orderByDesc('created_at')->paginate(10)->withQueryString()
+            ->through(fn($user) => [
+                'id'           => $user->id,
+                'display_name' => ($user->role === 'student' && $user->profile)
+                    ? trim($user->profile->first_name . ' ' . $user->profile->last_name)
+                    : $user->name,
+                'username_note' => ($user->role === 'student' && $user->profile)
+                    ? "(Username: {$user->name})" : null,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'role'       => $user->role ?? 'admin',
+                'status'     => $user->status ?? 'active',
+                'course'     => $user->profile->course ?? '-',
+                'year_level' => $user->profile->year_level ?? '-',
+                'student_id' => $user->profile->student_id ?? null,
+                'phone'      => $user->profile->phone ?? null,
+                'address'    => $user->profile->address ?? null,
+                'first_name' => $user->profile->first_name ?? null,
+                'last_name'  => $user->profile->last_name ?? null,
+            ]);
+
+        return Inertia::render('Admin/Users', [
+            'users'    => $users,
+            'q'        => $search,
+            'role'     => $role ?? '',
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
-             $users = $query
-        ->orderBy('name')
-        ->paginate(15)
-        ->withQueryString();
 
-        $users = $query->orderByDesc('created_at')
-                       ->paginate(10)
-                       ->withQueryString();
-
-        return view('admin.users.index', compact('users', 'search'));
-    }
-
-    /**
-     * Show edit form.
-     */
     public function edit(User $user)
-{
-    $profile = $user->profile ?? new \App\Models\StudentProfile([
-        'user_id' => $user->id,
-    ]);
+    {
+        $profile = $user->profile ?? new \App\Models\StudentProfile(['user_id' => $user->id]);
 
-    return view('admin.users.edit', compact('user', 'profile'));
-}
+        return Inertia::render('Admin/UsersEdit', [
+            'user' => [
+                'id'         => $user->id,
+                'name'       => $user->name,
+                'email'      => $user->email,
+                'role'       => $user->role ?? 'admin',
+                'status'     => $user->status ?? 'active',
+                'student_id' => $profile->student_id,
+                'first_name' => $profile->first_name,
+                'last_name'  => $profile->last_name,
+                'phone'      => $profile->phone,
+                'course'     => $profile->course,
+                'year_level' => $profile->year_level,
+                'address'    => $profile->address,
+            ],
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
+    }
 
 
     /**

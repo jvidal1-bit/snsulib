@@ -7,112 +7,113 @@ use App\Models\BookRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class BookRequestController extends Controller
 {
-    /**
-     * Main "Manage Requests" page (admin/requests.blade.php)
-     * - Search across user, book, category, status
-     * - Optional ?status=pending|processing|completed
-     */
+    private function mapRequest($req): array
+    {
+        return [
+            'id'           => $req->id,
+            'isbn'         => $req->book->isbn ?? '-',
+            'title'        => $req->book->title ?? 'Unknown Book',
+            'chapter'      => $req->chapter ?? '-',
+            'status'       => $req->status ?? '-',
+            'date'         => optional($req->created_at)->format('m/d/Y') ?? '-',
+            'student'      => $req->user->name ?? 'Unknown',
+            'author'       => $req->book->author ?? '-',
+            'category'     => $req->book->category->name ?? '-',
+            'year_published' => $req->book->year_published ?? '-',
+            'cover_url'    => $req->book?->cover_path
+                ? asset('storage/' . $req->book->cover_path)
+                : null,
+            'has_book'     => $req->book !== null,
+        ];
+    }
+
     public function index(Request $request)
     {
         $search = trim($request->input('q', ''));
-        $query = BookRequest::with(['user', 'book.category']);
+        $query  = BookRequest::with(['user', 'book.category']);
 
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
-                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%"))
-                ->orWhereHas('book', fn($b) => $b->where('title', 'like', "%{$search}%")
-                    ->orWhere('author', 'like', "%{$search}%"));
+                $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%"))
+                  ->orWhereHas('book', fn($b) => $b->where('title', 'like', "%{$search}%")
+                    ->orWhere('author', 'like', "%{$search}%"))
+                  ->orWhere('status', 'like', "%{$search}%");
             });
         }
 
         $requests = $query->latest()->paginate(10)->withQueryString()
-            ->through(fn($req) => [
-                'id'           => $req->id,
-                'student'      => $req->user->name ?? 'Unknown',
-                'title'        => $req->book->title ?? 'Unknown Book',
-                'author'       => $req->book->author ?? '-',
-                'category'     => $req->book->category->name ?? '-',
-                'year_published' => $req->book->year_published ?? '-',
-                'cover_url'    => $req->book?->cover_path
-                    ? asset('storage/' . $req->book->cover_path)
-                    : null,
-                'has_book'     => $req->book !== null,
-            ]);
+            ->through(fn($req) => $this->mapRequest($req));
 
-        return Inertia::render('Admin/Requests', [
+        return Inertia::render('Admin/Requests/Index', [
             'requests' => $requests,
             'q'        => $search,
             'authName' => Auth::user()->name ?? 'Admin',
         ]);
     }
 
-    /**
-     * Total Request page (admin/requests/total.blade.php)
-     * All statuses, just a different UI.
-     */
     public function total()
     {
         $requests = BookRequest::with(['user', 'book.category'])
-            ->latest()
-            ->paginate(15);
+            ->latest()->paginate(15)
+            ->through(fn($req) => $this->mapRequest($req));
 
-        return view('admin.requests.total', compact('requests'));
+        return Inertia::render('Admin/Requests/Total', [
+            'requests' => $requests,
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
-    /**
-     * Pending requests (admin/requests/pending.blade.php)
-     */
     public function pending()
     {
         $requests = BookRequest::with(['user', 'book.category'])
             ->where('status', 'pending')
-            ->latest()
-            ->paginate(15);
+            ->latest()->paginate(15)
+            ->through(fn($req) => $this->mapRequest($req));
 
-        return view('admin.requests.pending', compact('requests'));
+        return Inertia::render('Admin/Requests/Pending', [
+            'requests' => $requests,
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
-    /**
-     * Processing requests (admin/requests/processing.blade.php)
-     */
     public function processing()
     {
         $requests = BookRequest::with(['user', 'book.category'])
             ->where('status', 'processing')
-            ->latest()
-            ->paginate(15);
+            ->latest()->paginate(15)
+            ->through(fn($req) => $this->mapRequest($req));
 
-        return view('admin.requests.processing', compact('requests'));
+        return Inertia::render('Admin/Requests/Processing', [
+            'requests' => $requests,
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
-    /**
-     * Completed requests (admin/requests/completed.blade.php)
-     */
     public function completed()
     {
         $requests = BookRequest::with(['user', 'book.category'])
             ->where('status', 'completed')
-            ->latest()
-            ->paginate(15);
+            ->latest()->paginate(15)
+            ->through(fn($req) => $this->mapRequest($req));
 
-        return view('admin.requests.completed', compact('requests'));
+        return Inertia::render('Admin/Requests/Completed', [
+            'requests' => $requests,
+            'authName' => Auth::user()->name ?? 'Admin',
+        ]);
     }
 
-    /**
-     * Single request details page
-     * (we'll build admin/requests/show.blade.php later if you want)
-     */
     public function show(BookRequest $bookRequest)
     {
         $bookRequest->load(['book.category', 'user']);
         $book = $bookRequest->book;
 
-        return Inertia::render('Admin/RequestShow', [
+        return Inertia::render('Admin/Requests/Show', [
             'bookRequest' => [
                 'id'             => $bookRequest->id,
                 'status'         => $bookRequest->status,
@@ -140,53 +141,38 @@ class BookRequestController extends Controller
         ]);
     }
 
-
-    /**
-     * Update status / upload completed file / set expiration.
-     *
-     * Your BookRequest model fields:
-     * - status
-     * - completed_file   (string | nullable)
-     * - prepared_by      (string | nullable)
-     * - expiration_at    (datetime | nullable)
-     */
     public function updateStatus(Request $request, BookRequest $bookRequest)
-{
-    $validated = $request->validate([
-        'status'        => ['required', 'in:pending,processing,completed,expired'],
-        'file'          => ['nullable', 'file', 'max:10240'], // 10MB
-        'expiration_at' => ['nullable', 'date'],              // <-- use expiration_at
-        'note'          => ['nullable', 'string'],            // optional, if you want to save notes
-    ]);
+    {
+        $validated = $request->validate([
+            'status'        => ['required', 'in:pending,processing,completed,expired'],
+            'file'          => ['nullable', 'file', 'max:10240'],
+            'expiration_at' => ['nullable', 'date'],
+            'note'          => ['nullable', 'string'],
+        ]);
 
-    // Handle file upload (use completed_file column from your model)
-    if ($request->hasFile('file')) {
-        // delete old file if exists
-        if ($bookRequest->completed_file && Storage::disk('public')->exists($bookRequest->completed_file)) {
-            Storage::disk('public')->delete($bookRequest->completed_file);
+        if ($request->hasFile('file')) {
+            if ($bookRequest->completed_file && Storage::disk('public')->exists($bookRequest->completed_file)) {
+                Storage::disk('public')->delete($bookRequest->completed_file);
+            }
+            $path = $request->file('file')->store('request_files', 'public');
+            $bookRequest->completed_file = $path;
         }
 
-        $path = $request->file('file')->store('request_files', 'public');
-        $bookRequest->completed_file = $path;
+        $bookRequest->status      = $validated['status'];
+        $bookRequest->prepared_by = Auth::user()->name ?? 'Admin';
+
+        if (!empty($validated['expiration_at'])) {
+            $bookRequest->expiration_at = Carbon::parse($validated['expiration_at']);
+        } else {
+            $bookRequest->expiration_at = null;
+        }
+
+        if (array_key_exists('note', $validated)) {
+            $bookRequest->note = $validated['note'];
+        }
+
+        $bookRequest->save();
+
+        return back()->with('status', 'Request updated successfully.');
     }
-
-    $bookRequest->status      = $validated['status'];
-    $bookRequest->prepared_by = Auth::user()->name ?? 'Admin';
-
-    // Save expiration date to the correct column
-    if (!empty($validated['expiration_at'])) {
-        $bookRequest->expiration_at = Carbon::parse($validated['expiration_at']);
-    } else {
-        $bookRequest->expiration_at = null; // optional: clear if empty
-    }
-
-    // Optional: save admin note if you’re using that column
-    if (array_key_exists('note', $validated)) {
-        $bookRequest->note = $validated['note'];
-    }
-
-    $bookRequest->save();
-
-    return back()->with('status', 'Request updated successfully.');
-}
 }

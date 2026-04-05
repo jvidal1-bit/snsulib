@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use App\Models\StudentProfile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Inertia;
 
 class ProfileController extends Controller
 {
@@ -23,16 +24,27 @@ class ProfileController extends Controller
     /**
      * Show profile page.
      */
-     public function edit()
+    public function edit()
     {
-        $user = Auth::user();
+        $user    = Auth::user();
+        $profile = $user->profile ?? new StudentProfile(['user_id' => $user->id]);
 
-        // Always provide a $profile instance
-        $profile = $user->profile ?? new StudentProfile([
-            'user_id' => $user->id,
+        return Inertia::render('Student/Profile', [
+            'profile' => [
+                'student_id' => $profile->student_id,
+                'email'      => $user->email,
+                'first_name' => $profile->first_name,
+                'last_name'  => $profile->last_name,
+                'phone'      => $profile->phone,
+                'course'     => $profile->course,
+                'year_level' => $profile->year_level,
+                'address'    => $profile->address,
+                'avatar_url' => $user->avatar_path
+                    ? asset('storage/' . $user->avatar_path)
+                    : null,
+            ],
+            'authName' => $user->name ?? 'Student',
         ]);
-
-        return view('student.profile', compact('user', 'profile'));
     }
 
     /**

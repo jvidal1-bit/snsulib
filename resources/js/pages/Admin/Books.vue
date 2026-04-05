@@ -30,13 +30,13 @@
       <aside class="w-[200px] bg-gradient-to-b from-[#4caf50] to-[#388e3c]
                     py-[20px] shadow-[2px_0_10px_rgba(0,0,0,0.10)]">
         <nav class="flex flex-col gap-[8px] px-[15px] text-[14px] font-semibold">
-          <a v-for="item in navItems" :key="item.label" :href="route(item.route)"
+          <Link v-for="item in navItems" :key="item.label" :href="route(item.route)"
              class="px-[20px] py-[12px] rounded-[10px] transition-all"
              :class="item.active
                ? 'bg-white text-[#2e7d32] shadow-[0_3px_10px_rgba(0,0,0,0.20)]'
                : 'bg-white/30 text-[#1b5e20] hover:bg-white/50 hover:translate-x-[5px]'">
             {{ item.label }}
-          </a>
+          </Link>
         </nav>
       </aside>
 
@@ -46,7 +46,6 @@
         <!-- Header -->
         <div class="flex flex-col md:flex-row items-stretch md:items-center
                     justify-between gap-[20px] mb-[30px]">
-          <!-- Search -->
           <div class="flex-1 max-w-[600px] relative flex items-center bg-white
                       rounded-full px-[20px] py-[5px] shadow-[0_3px_10px_rgba(0,0,0,0.10)]">
             <form method="GET" :action="route('admin.books.index')" class="flex items-center w-full">
@@ -55,8 +54,6 @@
                      class="flex-1 border-none outline-none py-[10px] text-[16px] bg-transparent" />
             </form>
           </div>
-
-          <!-- Add New Book -->
           <button type="button" @click="addBookOpen = true"
             class="px-[30px] py-[12px] bg-[#4caf50] text-white rounded-[8px]
                    text-[16px] font-semibold whitespace-nowrap border-0 cursor-pointer
@@ -96,10 +93,10 @@
                       class="inline-flex items-center justify-center text-[20px]
                              w-8 h-8 rounded-full bg-transparent border-0 cursor-pointer
                              transition-transform hover:scale-110" title="View Book">👁️</button>
-                    <a :href="route('admin.books.edit', book.id)"
+                    <Link :href="route('admin.books.edit', book.id)"
                        class="inline-flex items-center justify-center text-[20px]
                               w-8 h-8 rounded-full cursor-pointer
-                              transition-transform hover:scale-110" title="Edit Book">✏️</a>
+                              transition-transform hover:scale-110" title="Edit Book">✏️</Link>
                   </td>
                 </tr>
               </tbody>
@@ -108,14 +105,14 @@
 
           <!-- Pagination -->
           <div v-if="books.last_page > 1" class="mt-[20px] flex gap-2 flex-wrap">
-            <a v-for="page in books.last_page" :key="page"
+            <Link v-for="page in books.last_page" :key="page"
                :href="`${route('admin.books.index')}?page=${page}${q ? '&q=' + q : ''}`"
                class="px-3 py-1 rounded-md text-sm border"
                :class="page === books.current_page
                  ? 'bg-[#2e7d32] text-white border-[#2e7d32]'
                  : 'bg-white text-gray-700 hover:bg-gray-100'">
               {{ page }}
-            </a>
+            </Link>
           </div>
         </div>
       </main>
@@ -132,8 +129,7 @@
     <div v-if="bookViewOpen" @click.self="bookViewOpen = false"
          class="fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-[20px] overflow-y-auto">
       <div @click.stop class="bg-white rounded-[20px] p-[40px] w-full max-w-[900px]
-                              max-h-[90vh] overflow-y-auto relative
-                              shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
+                              max-h-[90vh] overflow-y-auto relative shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
         <button type="button" @click="bookViewOpen = false"
           class="absolute top-[20px] right-[20px] bg-transparent border-0 text-[32px] text-[#666]
                  w-[40px] h-[40px] flex items-center justify-center rounded-full cursor-pointer
@@ -141,7 +137,6 @@
 
         <div v-if="selectedBook">
           <div class="flex flex-col md:flex-row gap-[30px] mb-[30px]">
-            <!-- Cover -->
             <div class="flex-shrink-0 flex justify-center md:justify-start">
               <div class="w-[200px] h-[280px] bg-[#f5f5f5] rounded-[12px] overflow-hidden
                           shadow-[0_5px_15px_rgba(0,0,0,0.20)] flex items-center justify-center">
@@ -150,12 +145,8 @@
                 <span v-else class="text-[40px]">📚</span>
               </div>
             </div>
-
-            <!-- Details -->
             <div class="flex-1">
-              <h2 class="text-[22px] mb-[15px]">
-                <span class="font-semibold">Book Title:</span> {{ selectedBook.title }}
-              </h2>
+              <h2 class="text-[22px] mb-[15px]"><span class="font-semibold">Book Title:</span> {{ selectedBook.title }}</h2>
               <p class="mb-[8px] text-[14px]"><strong>Author:</strong> {{ selectedBook.author || '-' }}</p>
               <p class="mb-[8px] text-[14px]"><strong>Publisher:</strong> {{ selectedBook.publisher || '-' }}</p>
               <p class="mb-[8px] text-[14px]"><strong>Year Published:</strong> {{ selectedBook.year_published || '-' }}</p>
@@ -163,12 +154,8 @@
               <p class="mb-[8px] text-[14px]"><strong>Category:</strong> {{ selectedBook.category || '-' }}</p>
               <p class="mb-[8px] text-[14px]"><strong>Total pages:</strong> {{ selectedBook.total_pages || '-' }}</p>
               <p class="mb-[8px] text-[14px]"><strong>Status:</strong> {{ selectedBook.status || 'available' }}</p>
-
               <h3 class="text-[16px] font-bold mt-[20px] mb-[10px] text-[#2e7d32]">Description:</h3>
-              <p class="text-[14px] text-[#555] leading-relaxed">
-                {{ selectedBook.description || 'No description available.' }}
-              </p>
-
+              <p class="text-[14px] text-[#555] leading-relaxed">{{ selectedBook.description || 'No description available.' }}</p>
               <h3 class="text-[16px] font-bold mt-[20px] mb-[10px] text-[#2e7d32]">Table of Contents:</h3>
               <pre class="text-[14px] text-[#555] whitespace-pre-wrap">{{ selectedBook.table_of_contents || 'No table of contents available.' }}</pre>
             </div>
@@ -177,18 +164,14 @@
           <div class="flex flex-col sm:flex-row gap-[12px] mt-[25px]">
             <button type="button" @click="bookViewOpen = false"
               class="flex-1 px-[20px] py-[14px] rounded-[8px] border-0 text-[15px] font-semibold
-                     bg-[#a5d6a7] text-black cursor-pointer transition-colors hover:bg-[#81c784]">
-              Close
-            </button>
+                     bg-[#a5d6a7] text-black cursor-pointer transition-colors hover:bg-[#81c784]">Close</button>
             <form :action="`${baseUrl}/admin/books/${selectedBook.id}`" method="POST" class="flex-1"
                   @submit.prevent="confirmDelete">
               <input type="hidden" name="_token" :value="csrf" />
               <input type="hidden" name="_method" value="DELETE" />
               <button type="submit"
                 class="w-full px-[20px] py-[14px] rounded-[8px] border-0 text-[15px] font-semibold
-                       bg-red-600 text-white cursor-pointer transition-colors hover:bg-red-700">
-                Delete Book
-              </button>
+                       bg-red-600 text-white cursor-pointer transition-colors hover:bg-red-700">Delete Book</button>
             </form>
           </div>
         </div>
@@ -199,8 +182,7 @@
     <div v-if="addBookOpen" @click.self="addBookOpen = false"
          class="fixed inset-0 bg-black/50 z-[2000] flex items-center justify-center p-[20px] overflow-y-auto">
       <div @click.stop class="bg-white rounded-[20px] p-[40px] w-full max-w-[700px]
-                              max-h-[90vh] overflow-y-auto relative
-                              shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
+                              max-h-[90vh] overflow-y-auto relative shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
         <button type="button" @click="addBookOpen = false"
           class="absolute top-[20px] right-[20px] bg-transparent border-0 text-[32px] text-[#666]
                  w-[40px] h-[40px] flex items-center justify-center rounded-full cursor-pointer
@@ -212,7 +194,6 @@
               enctype="multipart/form-data" class="flex flex-col gap-[20px]">
           <input type="hidden" name="_token" :value="csrf" />
 
-          <!-- Cover upload -->
           <div class="flex flex-col gap-[8px]">
             <label class="font-semibold text-[14px] text-[#333]">Book Cover:</label>
             <div class="flex flex-col items-center gap-[15px]">
@@ -224,119 +205,84 @@
                   <p class="text-[12px] text-[#666]">Upload Book Cover</p>
                 </div>
               </div>
-              <input type="file" name="cover" accept="image/*" class="hidden" ref="coverInput"
-                     @change="handleCoverChange" />
+              <input type="file" name="cover" accept="image/*" class="hidden" ref="coverInput" @change="handleCoverChange" />
               <button type="button" @click="$refs.coverInput.click()"
-                class="px-[25px] py-[10px] bg-[#4caf50] text-white rounded-[8px]
-                       text-[14px] font-semibold border-0 cursor-pointer
-                       transition-colors hover:bg-[#45a049]">
-                Choose Image
-              </button>
+                class="px-[25px] py-[10px] bg-[#4caf50] text-white rounded-[8px] text-[14px] font-semibold
+                       border-0 cursor-pointer transition-colors hover:bg-[#45a049]">Choose Image</button>
             </div>
           </div>
 
-          <!-- ISBN + Title -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">ISBN:</label>
-              <input type="text" name="isbn" required
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="text" name="isbn" required class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Title:</label>
-              <input type="text" name="title" required
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="text" name="title" required class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
           </div>
 
-          <!-- Author + Publisher -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Author:</label>
-              <input type="text" name="author"
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="text" name="author" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Publisher:</label>
-              <input type="text" name="publisher"
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="text" name="publisher" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
           </div>
 
-          <!-- Year + Category -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Year Published:</label>
-              <input type="text" name="year_published"
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="text" name="year_published" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Category:</label>
-              <select name="category_id"
-                      class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                             text-[15px] outline-none focus:border-[#66bb6a]">
+              <select name="category_id" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]">
                 <option value="">Choose category</option>
                 <option v-for="cat in categories" :key="cat.id" :value="cat.id">{{ cat.name }}</option>
               </select>
               <p class="mt-1 text-xs text-gray-500">Or add a new category:</p>
               <input type="text" name="new_category" placeholder="e.g. Web Development"
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
           </div>
 
-          <!-- Total Pages + Status -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-[20px]">
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Total Pages:</label>
-              <input type="number" name="total_pages"
-                     class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                            text-[15px] outline-none focus:border-[#66bb6a]" />
+              <input type="number" name="total_pages" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]" />
             </div>
             <div class="flex flex-col gap-[8px]">
               <label class="font-semibold text-[14px] text-[#333]">Status:</label>
-              <select name="status" required
-                      class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                             text-[15px] outline-none focus:border-[#66bb6a]">
+              <select name="status" required class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[15px] outline-none focus:border-[#66bb6a]">
                 <option value="available">Available</option>
                 <option value="unavailable">Unavailable</option>
               </select>
             </div>
           </div>
 
-          <!-- Description -->
           <div class="flex flex-col gap-[8px]">
             <label class="font-semibold text-[14px] text-[#333]">Description:</label>
-            <textarea name="description" rows="4"
-                      class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                             text-[14px] resize-y outline-none focus:border-[#66bb6a]"></textarea>
+            <textarea name="description" rows="4" class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[14px] resize-y outline-none focus:border-[#66bb6a]"></textarea>
           </div>
 
-          <!-- Table of Contents -->
           <div class="flex flex-col gap-[8px]">
             <label class="font-semibold text-[14px] text-[#333]">Table of Contents:</label>
             <textarea name="table_of_contents" rows="4" placeholder="Chapter 1 - Introduction"
-                      class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px]
-                             text-[14px] resize-y outline-none focus:border-[#66bb6a]"></textarea>
+                      class="px-[12px] py-[12px] border-2 border-[#a5d6a7] rounded-[8px] text-[14px] resize-y outline-none focus:border-[#66bb6a]"></textarea>
           </div>
 
-          <!-- Actions -->
           <div class="flex flex-col sm:flex-row gap-[12px] mt-[25px]">
             <button type="button" @click="addBookOpen = false"
               class="flex-1 px-[20px] py-[14px] rounded-[8px] border-0 text-[15px] font-semibold
-                     bg-[#a5d6a7] text-black cursor-pointer transition-colors hover:bg-[#81c784]">
-              Cancel
-            </button>
+                     bg-[#a5d6a7] text-black cursor-pointer transition-colors hover:bg-[#81c784]">Cancel</button>
             <button type="submit"
               class="flex-1 px-[20px] py-[14px] rounded-[8px] border-0 text-[15px] font-semibold
-                     bg-[#2e7d32] text-white cursor-pointer transition-colors hover:bg-[#1b5e20]">
-              Save Book
-            </button>
+                     bg-[#2e7d32] text-white cursor-pointer transition-colors hover:bg-[#1b5e20]">Save Book</button>
           </div>
         </form>
       </div>
@@ -347,7 +293,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import { router, Link } from '@inertiajs/vue3'
 
 const props = defineProps({
   books:      { type: Object, default: () => ({ data: [], last_page: 1, current_page: 1 }) },
@@ -356,12 +302,12 @@ const props = defineProps({
   authName:   { type: String, default: 'Admin' },
 })
 
-const menuOpen      = ref(false)
-const addBookOpen   = ref(false)
-const bookViewOpen  = ref(false)
-const selectedBook  = ref(null)
-const coverPreview  = ref(null)
-const coverInput    = ref(null)
+const menuOpen     = ref(false)
+const addBookOpen  = ref(false)
+const bookViewOpen = ref(false)
+const selectedBook = ref(null)
+const coverPreview = ref(null)
+const coverInput   = ref(null)
 const route   = window.route
 const csrf    = document.querySelector('meta[name="csrf-token"]')?.content
 const baseUrl = window.location.origin
@@ -369,11 +315,7 @@ const baseUrl = window.location.origin
 const logout = () => router.post(route('logout'))
 document.addEventListener('click', () => { menuOpen.value = false })
 
-const openView = (book) => {
-  selectedBook.value = book
-  bookViewOpen.value = true
-}
-
+const openView = (book) => { selectedBook.value = book; bookViewOpen.value = true }
 const handleCoverChange = (event) => {
   const file = event.target.files[0]
   if (!file) { coverPreview.value = null; return }
@@ -381,11 +323,8 @@ const handleCoverChange = (event) => {
   reader.onload = (e) => { coverPreview.value = e.target.result }
   reader.readAsDataURL(file)
 }
-
 const confirmDelete = (event) => {
-  if (confirm('Delete this book? This cannot be undone.')) {
-    event.target.submit()
-  }
+  if (confirm('Delete this book? This cannot be undone.')) event.target.submit()
 }
 
 const navItems = [

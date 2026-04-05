@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth; 
 
 class SettingsController extends Controller
 {
@@ -13,10 +15,17 @@ class SettingsController extends Controller
      */
     public function index()
     {
-        $user = auth()->user();
-        $settings = Setting::first();
+        $settings = \App\Models\Setting::first() ?? new \App\Models\Setting();
+        $user = Auth::user();
 
-        return view('admin.settings', compact('user', 'settings'));
+        return Inertia::render('Admin/Settings', [
+            'settings'   => $settings,
+            'authName'   => $user->name ?? 'Admin',
+            'authEmail'  => $user->email ?? '',
+            'authAvatar' => $user->avatar_path
+                ? asset('storage/' . $user->avatar_path)
+                : null,
+        ]);
     }
 
     /**
