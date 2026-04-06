@@ -1,46 +1,10 @@
 <template>
   <div class="min-h-screen bg-[#e8e8e8]">
-
-    <!-- Navbar -->
-    <nav class="bg-gradient-to-r from-[#a5d6a7] to-[#c8e6c9] px-[30px] py-[15px]
-                flex items-center justify-between shadow-[0_2px_10px_rgba(0,0,0,0.10)]
-                sticky top-0 z-[1000]">
-      <div class="text-[20px] font-black tracking-[0.5px]">SNSU LIBRARY E-REQUEST</div>
-      <div class="relative">
-        <button @click.stop="menuOpen = !menuOpen"
-          class="flex items-center gap-[8px] px-[16px] py-[8px] rounded-[8px]
-                 text-[16px] font-semibold text-[#333] bg-transparent hover:bg-white/30 transition-colors">
-          <span>{{ authName }}</span><span class="text-[12px]">▼</span>
-        </button>
-        <div v-if="menuOpen" @click.stop
-          class="absolute right-0 mt-[10px] bg-white rounded-[10px]
-                 shadow-[0_5px_20px_rgba(0,0,0,0.15)] min-w-[180px] overflow-hidden z-[1001]">
-          <button type="button" @click="logout"
-            class="w-full flex items-center gap-[10px] px-[20px] py-[12px]
-                   text-[#333] font-medium text-[14px] hover:bg-[#f5f5f5] transition-colors">
-            <span class="text-[16px]">🚪</span><span>Logout</span>
-          </button>
-        </div>
-      </div>
-    </nav>
+    <AdminNavbar :auth-name="authName" />
 
     <div class="flex min-h-[calc(100vh-60px)]">
+      <AdminSidebar active="Dashboard" />
 
-      <!-- Sidebar -->
-      <aside class="w-[200px] bg-gradient-to-b from-[#4caf50] to-[#388e3c]
-                    py-[20px] shadow-[2px_0_10px_rgba(0,0,0,0.10)]">
-        <nav class="flex flex-col gap-[8px] px-[15px] text-[14px] font-semibold">
-          <Link v-for="item in navItems" :key="item.label" :href="route(item.route)"
-             class="px-[20px] py-[12px] rounded-[10px] transition-all"
-             :class="item.active
-               ? 'bg-white text-[#2e7d32] shadow-[0_3px_10px_rgba(0,0,0,0.20)]'
-               : 'bg-white/30 text-[#1b5e20] hover:bg-white/50 hover:translate-x-[5px]'">
-            {{ item.label }}
-          </Link>
-        </nav>
-      </aside>
-
-      <!-- Main content -->
       <main class="flex-1 px-[30px] py-[30px] bg-[#f5f5f5]">
         <div class="mb-[30px]">
           <h1 class="text-[32px] text-[#333] font-semibold">Dashboard</h1>
@@ -86,8 +50,8 @@
                   <td class="px-[15px] py-[15px]">{{ req.year_published }}</td>
                   <td class="px-[15px] py-[15px]">
                     <Link :href="route('admin.requests.show', req.id)"
-                      class="inline-flex items-center justify-center text-[20px]
-                             w-8 h-8 rounded-full transition-transform hover:scale-110">⚙️</Link>
+                       class="inline-flex items-center justify-center text-[20px]
+                              w-8 h-8 rounded-full transition-transform hover:scale-110">⚙️</Link>
                   </td>
                 </tr>
               </tbody>
@@ -97,19 +61,15 @@
       </main>
     </div>
 
-    <!-- Footer -->
-    <div class="flex justify-end items-center gap-[10px] px-[30px] py-[10px]">
-      <span class="text-[12px] text-gray-500 mr-auto">For Nation's Greater High</span>
-      <img :src="'/assets/images/snsu-logo.png'" class="h-[40px] w-[40px] rounded-full" />
-      <img :src="'/assets/images/library-logo.png'" class="h-[40px] w-[40px] rounded-full" />
-    </div>
-
+    <AdminFooter />
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
+import AdminNavbar  from '@/pages/Admin/Partials/Navbar.vue'
+import AdminSidebar from '@/pages/Admin/Partials/Sidebar.vue'
+import AdminFooter  from '@/pages/Admin/Partials/FooterLogos.vue'
 
 const props = defineProps({
   totalRequests:      { type: Number, default: 0 },
@@ -120,18 +80,7 @@ const props = defineProps({
   authName:           { type: String, default: 'Admin' },
 })
 
-const menuOpen = ref(false)
 const route = window.route
-const logout = () => router.post(route('logout'))
-document.addEventListener('click', () => { menuOpen.value = false })
-
-const navItems = [
-  { label: 'Dashboard', route: 'admin.dashboard',      active: true  },
-  { label: 'Requests',  route: 'admin.requests.index', active: false },
-  { label: 'Books',     route: 'admin.books.index',    active: false },
-  { label: 'Users',     route: 'admin.users.index',    active: false },
-  { label: 'Settings',  route: 'admin.settings.index', active: false },
-]
 
 const statCards = [
   { label: 'Pending:',       value: props.pendingRequests,    route: 'admin.requests.pending',    bg: 'bg-[#81c784]', textColor: 'text-white' },

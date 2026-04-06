@@ -14,22 +14,22 @@ class RequestController extends Controller
     private function mapRequest($r): array
     {
         return [
-            'id'             => $r->id,
-            'isbn'           => $r->book->isbn ?? '—',
-            'title'          => $r->book->title ?? 'Unknown Title',
-            'chapter'        => $r->chapter ?? '—',
-            'status'         => $r->status,
-            'date'           => optional($r->created_at)->format('m/d/y'),
-            'purpose'        => $r->purpose,
-            'note'           => $r->note,
-            'needed_by'      => optional($r->needed_by)->format('m/d/Y'),
-            'created_at'     => optional($r->created_at)->setTimezone('Asia/Manila')->format('m/d/Y H:i'),
-            'prepared_by'    => $r->prepared_by,
-            'expiration_at'  => optional($r->expiration_at)->format('m/d/Y H:i'),
-            'completed_file' => $r->completed_file
+            'id'            => $r->id,
+            'isbn'          => $r->book->isbn ?? '—',
+            'title'         => $r->book->title ?? 'Unknown Title',
+            'chapter'       => $r->chapter ?? '—',
+            'status'        => $r->status,
+            'date'          => optional($r->created_at)->format('m/d/y'),
+            'purpose'       => $r->purpose,
+            'note'          => $r->note,
+            'needed_by'     => optional($r->needed_by)->format('m/d/Y'),
+            'created_at'    => optional($r->created_at)->setTimezone('Asia/Manila')->format('m/d/Y H:i'),
+            'prepared_by'   => $r->prepared_by,
+            'expiration_at' => optional($r->expiration_at)->format('m/d/Y H:i'),
+            'completed_file'=> $r->completed_file
                 ? asset('storage/' . $r->completed_file)
                 : null,
-            'expired'        => $r->expiration_at && $r->expiration_at->isPast(),
+            'expired'       => $r->expiration_at && $r->expiration_at->isPast(),
         ];
     }
 
@@ -123,7 +123,9 @@ class RequestController extends Controller
     {
         $studentId = Auth::id() ?? 1;
 
-        if ($bookRequest->user_id !== $studentId) abort(403);
+        if ($bookRequest->user_id !== $studentId) {
+            abort(403);
+        }
 
         if ($bookRequest->status !== 'pending') {
             return back()->withErrors('Only pending requests can be cancelled.');

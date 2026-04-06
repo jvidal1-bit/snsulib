@@ -1,64 +1,27 @@
 <template>
   <div class="min-h-screen bg-gray-100 pb-20">
+    <StudentNavbar :auth-name="authName" active="Catalog" />
 
-    <!-- Navbar -->
-    <nav class="w-full bg-[#c8e6c9] shadow-md">
-      <div class="max-w-6xl mx-auto px-6">
-        <div class="flex items-center justify-between h-16">
-          <div class="font-semibold text-lg tracking-wide text-[#1b5e20]">SNSU LIBRARY E-REQUEST</div>
-          <div class="flex items-center gap-6 text-sm font-semibold text-gray-800">
-            <Link :href="route('student.home')"
-               class="px-2 py-1 border-b-2 border-transparent hover:border-[#81c784]">Home</Link>
-            <Link :href="route('student.catalog')"
-               class="px-2 py-1 border-b-2 border-[#1b5e20] text-[#1b5e20]">Catalog</Link>
-            <Link :href="route('student.requests.index')"
-               class="px-2 py-1 border-b-2 border-transparent hover:border-[#81c784]">My Request</Link>
-            <div class="relative">
-              <button type="button" @click.stop="menuOpen = !menuOpen"
-                class="flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white/60">
-                <span>{{ authName }}</span><span class="text-xs">▼</span>
-              </button>
-              <div v-if="menuOpen" @click.stop
-                class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border text-sm z-50">
-                <Link :href="route('student.profile')"
-                   class="flex items-center px-3 py-2 hover:bg-gray-100">
-                  <span class="mr-2">👤</span> Profile
-                </Link>
-                <button type="button" @click="logout"
-                  class="w-full text-left flex items-center px-3 py-2 text-red-600 hover:bg-gray-100">
-                  <span class="mr-2">🚪</span> Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
-
-    <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 py-8">
 
-      <!-- Flash -->
       <div v-if="$page.props.flash && $page.props.flash.status"
            class="mb-4 bg-green-100 text-green-800 text-sm px-4 py-2 rounded-lg">
         {{ $page.props.flash.status }}
       </div>
-
-      <!-- Errors -->
       <div v-if="$page.props.errors && Object.keys($page.props.errors).length"
            class="mb-4 bg-red-100 text-red-800 text-sm px-4 py-3 rounded-lg">
         <p v-for="(msg, key) in $page.props.errors" :key="key">{{ msg }}</p>
       </div>
 
-      <!-- Search Bar -->
+      <!-- Search -->
       <div class="mb-8">
-        <form method="GET" :action="route('student.catalog')" class="max-w-[500px] relative">
-          <input type="text" name="q" :value="q" placeholder="Search books..."
-                 class="w-full py-[15px] pl-5 pr-12 border-2 border-gray-300 rounded-full
-                        text-base outline-none focus:border-[#2e7d32] transition" />
-          <button type="submit"
-                  class="absolute right-2 top-1/2 -translate-y-1/2 bg-transparent border-0 text-2xl cursor-pointer px-2">🔍</button>
-        </form>
+        <div class="max-w-[500px] relative flex items-center bg-white rounded-full border-2 border-gray-300 focus-within:border-[#2e7d32]">
+          <button type="button" @click="search"
+                  class="bg-transparent border-0 text-2xl cursor-pointer px-4">🔍</button>
+          <input v-model="searchQ" type="text" placeholder="Search books..."
+                 class="flex-1 py-[15px] pr-4 border-none outline-none bg-transparent text-base"
+                 @keyup.enter="search" />
+        </div>
       </div>
 
       <!-- Books Grid -->
@@ -67,14 +30,11 @@
              class="col-span-4 bg-white rounded-xl shadow p-6 text-center text-gray-500">
           No books found{{ q ? ` for "${q}"` : '' }}.
         </div>
-
         <div v-for="book in books.data" :key="book.id"
-             class="bg-white rounded-xl p-5 shadow-md transition transform
-                    hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between">
+             class="bg-white rounded-xl p-5 shadow-md transition transform hover:-translate-y-1 hover:shadow-2xl flex flex-col justify-between">
           <div>
-            <div class="mb-3 w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden
-                        flex items-center justify-center">
-              <img v-if="book.cover_url" :src="book.cover_url" class="w-full h-full object-cover" alt="Cover" />
+            <div class="mb-3 w-full aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden flex items-center justify-center">
+              <img v-if="book.cover_url" :src="book.cover_url" alt="Book Cover" class="w-full h-full object-cover" />
               <div v-else class="flex flex-col items-center justify-center text-gray-400 text-xs">
                 <span class="text-3xl mb-1">📚</span><span>No cover</span>
               </div>
@@ -90,13 +50,10 @@
               {{ book.status }}
             </span>
             <button type="button"
-              class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium
-                     hover:bg-gray-100 hover:border-[#2e7d32] transition"
-              :class="book.is_unavailable ? 'opacity-60 cursor-not-allowed' : ''"
-              :disabled="book.is_unavailable"
-              @click="!book.is_unavailable && openBook(book)">
-              View
-            </button>
+                    class="flex-1 px-3 py-2 bg-white border border-gray-300 rounded-md text-xs font-medium hover:bg-gray-100 hover:border-[#2e7d32] transition"
+                    :class="book.is_unavailable ? 'opacity-60 cursor-not-allowed' : ''"
+                    :disabled="book.is_unavailable"
+                    @click="!book.is_unavailable && openBook(book)">View</button>
           </div>
         </div>
       </div>
@@ -104,7 +61,7 @@
       <!-- Pagination -->
       <div v-if="books.last_page > 1" class="mt-8 flex justify-center gap-2">
         <Link v-for="page in books.last_page" :key="page"
-           :href="`${route('student.catalog')}?page=${page}${q ? '&q=' + q : ''}`"
+           :href="pageUrl(page)"
            class="px-3 py-1 rounded-md text-sm border"
            :class="page === books.current_page
              ? 'bg-[#2e7d32] text-white border-[#2e7d32]'
@@ -114,25 +71,16 @@
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="fixed bottom-0 w-full bg-white border-t px-6 py-3
-                   flex justify-between items-center text-xs text-gray-500">
-      <span>For Nation's Greater High</span>
-      <div class="flex gap-2">
-        <img :src="'/assets/images/snsu-logo.png'" class="h-8 w-8 rounded-full" />
-        <img :src="'/assets/images/library-logo.png'" class="h-8 w-8 rounded-full" />
-      </div>
-    </footer>
+    <StudentFooter />
 
     <!-- Book View Modal -->
-    <div v-if="bookModalOpen" @click.self="closeBook"
-         class="fixed inset-0 bg-black/40 z-40 flex items-center justify-center p-[20px] overflow-y-auto">
-      <div @click.stop class="bg-white rounded-2xl shadow-xl max-w-4xl w-full mx-4 p-6 relative">
+    <div v-if="bookModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 z-40"
+         @click.self="closeBook">
+      <div class="bg-white rounded-2xl shadow-xl max-w-4xl w-full mx-4 p-6 relative">
         <div class="flex flex-col md:flex-row gap-6">
           <div class="w-full md:w-1/3">
             <div class="border rounded-xl h-52 flex items-center justify-center bg-gray-50 overflow-hidden">
-              <img v-if="selectedBook && selectedBook.cover_url" :src="selectedBook.cover_url"
-                   class="w-full h-full object-cover" alt="Cover" />
+              <img v-if="selectedBook && selectedBook.cover_url" :src="selectedBook.cover_url" alt="Book Cover" class="w-full h-full object-cover" />
               <div v-else class="flex flex-col items-center justify-center text-gray-400 text-xs">
                 <span class="text-4xl mb-1">📚</span><span>No cover uploaded</span>
               </div>
@@ -154,38 +102,33 @@
           </div>
         </div>
         <div class="mt-6 flex justify-end gap-3">
-          <button type="button" @click="closeBook"
-            class="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100">Back</button>
-          <button type="button" @click="openRequest"
-            class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white
-                   hover:bg-blue-700 disabled:opacity-50"
-            :disabled="!selectedBook || selectedBook.is_unavailable">Request</button>
+          <button type="button" class="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-gray-100" @click="closeBook">Back</button>
+          <button type="button"
+                  class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                  :disabled="!selectedBook || selectedBook.is_unavailable" @click="openRequest">Request</button>
         </div>
       </div>
     </div>
 
     <!-- Request Form Modal -->
-    <div v-if="requestModalOpen" @click.self="closeRequest"
-         class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-[20px] overflow-y-auto">
-      <div @click.stop class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
+    <div v-if="requestModalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
+         @click.self="closeRequest">
+      <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 p-6">
         <h2 class="text-lg font-semibold mb-4">Request Form:</h2>
         <form method="POST" :action="route('student.requests.store')">
           <input type="hidden" name="_token" :value="csrf" />
           <input type="hidden" name="book_id" :value="selectedBook?.id" />
           <div class="mb-3">
             <label class="block text-xs font-semibold text-gray-600 mb-1">Book Title:</label>
-            <input type="text" class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100"
-                   :value="selectedBook?.title" readonly />
+            <input type="text" class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-100" :value="selectedBook?.title" readonly />
           </div>
           <div class="mb-3">
             <label class="block text-xs font-semibold text-gray-600 mb-1">Chapter/Section:</label>
-            <input type="text" name="chapter" class="w-full border rounded-lg px-3 py-2 text-sm"
-                   placeholder="Chapter/Section:" required />
+            <input type="text" name="chapter" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Chapter/Section:" required />
           </div>
           <div class="mb-3">
             <label class="block text-xs font-semibold text-gray-600 mb-1">Purpose:</label>
-            <input type="text" name="purpose" class="w-full border rounded-lg px-3 py-2 text-sm"
-                   placeholder="Purpose:" required />
+            <input type="text" name="purpose" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Purpose:" required />
           </div>
           <div class="mb-3">
             <label class="block text-xs font-semibold text-gray-600 mb-1">Needed By:</label>
@@ -193,27 +136,23 @@
           </div>
           <div class="mb-4">
             <label class="block text-xs font-semibold text-gray-600 mb-1">Note:</label>
-            <input type="text" name="note" class="w-full border rounded-lg px-3 py-2 text-sm"
-                   placeholder="Note (optional):" />
+            <input type="text" name="note" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Note (optional):" />
           </div>
           <div class="flex gap-3 mt-4">
-            <button type="button" @click="closeRequest"
-              class="flex-1 py-3 px-4 rounded-full text-sm font-semibold
-                     bg-[#a5d6a7] text-black hover:bg-[#81c784] transition">Back</button>
-            <button type="submit"
-              class="flex-1 py-3 px-4 rounded-full text-sm font-semibold
-                     bg-[#2e7d32] text-white hover:bg-[#1b5e20] transition">Submit Request</button>
+            <button type="button" class="flex-1 py-3 px-4 rounded-full text-sm font-semibold bg-[#a5d6a7] text-black hover:bg-[#81c784] transition" @click="closeRequest">Back</button>
+            <button type="submit" class="flex-1 py-3 px-4 rounded-full text-sm font-semibold bg-[#2e7d32] text-white hover:bg-[#1b5e20] transition">Submit Request</button>
           </div>
         </form>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
+import StudentNavbar from '@/pages/Student/Partials/Navbar.vue'
+import StudentFooter from '@/pages/Student/Partials/Footer.vue'
 
 const props = defineProps({
   books:    { type: Object, default: () => ({ data: [], last_page: 1, current_page: 1 }) },
@@ -221,14 +160,23 @@ const props = defineProps({
   authName: { type: String, default: 'Student' },
 })
 
-const menuOpen        = ref(false)
-const bookModalOpen   = ref(false)
+const bookModalOpen    = ref(false)
 const requestModalOpen = ref(false)
-const selectedBook    = ref(null)
-const route  = window.route
-const csrf   = document.querySelector('meta[name="csrf-token"]')?.content
-const logout = () => router.post(route('logout'))
-document.addEventListener('click', () => { menuOpen.value = false })
+const selectedBook     = ref(null)
+const searchQ          = ref(props.q)
+const route = window.route
+const csrf  = document.querySelector('meta[name="csrf-token"]')?.content
+
+const search = () => {
+  router.get(route('student.catalog'), { q: searchQ.value }, { preserveState: true, replace: true })
+}
+
+const pageUrl = (page) => {
+  const params = new URLSearchParams()
+  params.set('page', page)
+  if (searchQ.value) params.set('q', searchQ.value)
+  return `${route('student.catalog')}?${params.toString()}`
+}
 
 const openBook    = (book) => { selectedBook.value = book; bookModalOpen.value = true; requestModalOpen.value = false }
 const closeBook   = () => { bookModalOpen.value = false }

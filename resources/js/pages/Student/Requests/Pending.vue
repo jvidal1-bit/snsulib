@@ -1,39 +1,9 @@
 <template>
   <div class="min-h-screen bg-gray-100">
+    <StudentNavbar :auth-name="authName" active="Requests" />
 
-    <!-- Navbar -->
-    <nav class="w-full bg-[#c8e6c9] shadow-md">
-      <div class="max-w-6xl mx-auto px-6">
-        <div class="flex items-center justify-between h-16">
-          <div class="font-semibold text-lg tracking-wide text-[#1b5e20]">SNSU LIBRARY E-REQUEST</div>
-          <div class="flex items-center gap-6 text-sm font-semibold text-gray-800">
-            <Link :href="route('student.home')" class="px-2 py-1 border-b-2 border-transparent hover:border-[#81c784]">Home</Link>
-            <Link :href="route('student.catalog')" class="px-2 py-1 border-b-2 border-transparent hover:border-[#81c784]">Catalog</Link>
-            <Link :href="route('student.requests.index')" class="px-2 py-1 border-b-2 border-transparent hover:border-[#81c784]">My Request</Link>
-            <div class="relative">
-              <button type="button" @click.stop="menuOpen = !menuOpen"
-                class="flex items-center gap-1 px-3 py-1 rounded-md hover:bg-white/60">
-                <span>{{ authName }}</span><span class="text-xs">▼</span>
-              </button>
-              <div v-if="menuOpen" @click.stop
-                class="absolute right-0 mt-2 w-40 bg-white rounded-md shadow-lg border text-sm z-50">
-                <Link :href="route('student.profile')" class="flex items-center px-3 py-2 hover:bg-gray-100">
-                  <span class="mr-2">👤</span> Profile
-                </Link>
-                <button type="button" @click="logout"
-                  class="w-full text-left flex items-center px-3 py-2 text-red-600 hover:bg-gray-100">
-                  <span class="mr-2">🚪</span> Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </nav>
+    <main class="max-w-6xl mx-auto px-4 py-8 pb-24">
 
-    <main class="max-w-6xl mx-auto px-4 py-8">
-
-      <!-- Flash -->
       <div v-if="$page.props.flash && $page.props.flash.status"
            class="mb-4 bg-green-100 text-green-800 text-sm px-4 py-2 rounded-lg">
         {{ $page.props.flash.status }}
@@ -82,14 +52,8 @@
                   <div class="flex items-center justify-center gap-2">
                     <button type="button" @click="openModal(req)"
                       class="text-xl leading-none bg-transparent border-0 cursor-pointer transform transition hover:scale-110">⚙️</button>
-                    <form method="POST" :action="route('student.requests.cancel', req.id)"
-                          @submit.prevent="confirmCancel($event)">
-                      <input type="hidden" name="_token" :value="csrf" />
-                      <button type="submit"
-                        class="text-xs px-3 py-1 rounded-full bg-[#00897b] text-white font-semibold hover:bg-[#00695c] transition">
-                        Cancel
-                      </button>
-                    </form>
+                    <button type="button" @click="cancelRequest(req.id)"
+                      class="text-xs px-3 py-1 rounded-full bg-[#00897b] text-white font-semibold hover:bg-[#00695c] transition">Cancel</button>
                   </div>
                 </td>
               </tr>
@@ -99,15 +63,7 @@
       </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="fixed bottom-0 w-full bg-white border-t px-6 py-3
-                   flex justify-between items-center text-xs text-gray-500">
-      <span>For Nation's Greater High</span>
-      <div class="flex gap-2">
-        <img :src="'/assets/images/snsu-logo.png'" class="h-8 w-8 rounded-full" />
-        <img :src="'/assets/images/library-logo.png'" class="h-8 w-8 rounded-full" />
-      </div>
-    </footer>
+    <StudentFooter />
 
     <!-- Modal -->
     <div v-if="modalOpen" class="fixed inset-0 flex items-center justify-center bg-black/40 z-50"
@@ -134,41 +90,38 @@
         <div class="flex gap-3 mt-4">
           <button type="button" @click="closeModal"
             class="flex-1 py-3 px-4 rounded-full text-sm font-semibold bg-[#a5d6a7] text-black hover:bg-[#81c784] transition">Back</button>
-          <form v-if="selected" method="POST" :action="route('student.requests.cancel', selected.id)"
-                @submit.prevent="confirmCancel($event)">
-            <input type="hidden" name="_token" :value="csrf" />
-            <button type="submit"
-              class="py-3 px-6 rounded-full text-sm font-semibold bg-[#00897b] text-white hover:bg-[#00695c] transition">
-              Cancel Request
-            </button>
-          </form>
+          <button v-if="selected" type="button" @click="cancelRequest(selected.id)"
+            class="py-3 px-6 rounded-full text-sm font-semibold bg-[#00897b] text-white hover:bg-[#00695c] transition">Cancel Request</button>
         </div>
       </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
 import { ref } from 'vue'
-import { router, Link } from '@inertiajs/vue3'
+import { Link, router } from '@inertiajs/vue3'
+import StudentNavbar from '@/pages/Student/Partials/Navbar.vue'
+import StudentFooter from '@/pages/Student/Partials/Footer.vue'
 
 const props = defineProps({
   requests: { type: Array,  default: () => [] },
   authName: { type: String, default: 'Student' },
 })
 
-const menuOpen  = ref(false)
 const modalOpen = ref(false)
 const selected  = ref(null)
-const route  = window.route
-const csrf   = document.querySelector('meta[name="csrf-token"]')?.content
-const logout = () => router.post(route('logout'))
-document.addEventListener('click', () => { menuOpen.value = false })
+const route = window.route
 
 const openModal  = (req) => { selected.value = req; modalOpen.value = true }
 const closeModal = () => { modalOpen.value = false; selected.value = null }
-const confirmCancel = (event) => {
-  if (confirm('Cancel this request?')) event.target.submit()
+
+// The route only accepts POST, so we use router.post with _method spoofing if needed
+// but since the controller uses ->delete(), we send POST and let Laravel handle it
+const cancelRequest = (id) => {
+  if (!confirm('Cancel this request?')) return
+  router.post(route('student.requests.cancel', id), {}, {
+    onSuccess: () => closeModal(),
+  })
 }
 </script>

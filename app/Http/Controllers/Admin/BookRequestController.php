@@ -15,20 +15,20 @@ class BookRequestController extends Controller
     private function mapRequest($req): array
     {
         return [
-            'id'           => $req->id,
-            'isbn'         => $req->book->isbn ?? '-',
-            'title'        => $req->book->title ?? 'Unknown Book',
-            'chapter'      => $req->chapter ?? '-',
-            'status'       => $req->status ?? '-',
-            'date'         => optional($req->created_at)->format('m/d/Y') ?? '-',
-            'student'      => $req->user->name ?? 'Unknown',
-            'author'       => $req->book->author ?? '-',
-            'category'     => $req->book->category->name ?? '-',
+            'id'             => $req->id,
+            'isbn'           => $req->book->isbn ?? '-',
+            'title'          => $req->book->title ?? 'Unknown Book',
+            'chapter'        => $req->chapter ?? '-',
+            'status'         => $req->status ?? '-',
+            'date'           => optional($req->created_at)->format('m/d/Y') ?? '-',
+            'student'        => $req->user->name ?? 'Unknown',
+            'author'         => $req->book->author ?? '-',
+            'category'       => $req->book->category->name ?? '-',
             'year_published' => $req->book->year_published ?? '-',
-            'cover_url'    => $req->book?->cover_path
+            'cover_url'      => $req->book?->cover_path
                 ? asset('storage/' . $req->book->cover_path)
                 : null,
-            'has_book'     => $req->book !== null,
+            'has_book'       => $req->book !== null,
         ];
     }
 
@@ -40,9 +40,9 @@ class BookRequestController extends Controller
         if ($search !== '') {
             $query->where(function ($q) use ($search) {
                 $q->whereHas('user', fn($u) => $u->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"))
+                      ->orWhere('email', 'like', "%{$search}%"))
                   ->orWhereHas('book', fn($b) => $b->where('title', 'like', "%{$search}%")
-                    ->orWhere('author', 'like', "%{$search}%"))
+                      ->orWhere('author', 'like', "%{$search}%"))
                   ->orWhere('status', 'like', "%{$search}%");
             });
         }
@@ -115,25 +115,25 @@ class BookRequestController extends Controller
 
         return Inertia::render('Admin/Requests/Show', [
             'bookRequest' => [
-                'id'             => $bookRequest->id,
-                'status'         => $bookRequest->status,
-                'chapter'        => $bookRequest->chapter,
-                'purpose'        => $bookRequest->purpose,
-                'note'           => $bookRequest->note ?? '',
-                'needed_by'      => optional($bookRequest->needed_by)->format('m/d/Y'),
-                'submitted_at'   => optional($bookRequest->created_at)->format('m/d/Y - g:i A'),
-                'expiration_at_raw' => optional($bookRequest->expiration_at)->format('Y-m-d'),
-                'completed_file' => $bookRequest->completed_file
+                'id'                 => $bookRequest->id,
+                'status'             => $bookRequest->status,
+                'chapter'            => $bookRequest->chapter,
+                'purpose'            => $bookRequest->purpose,
+                'note'               => $bookRequest->note ?? '',
+                'needed_by'          => optional($bookRequest->needed_by)->format('m/d/Y'),
+                'submitted_at'       => optional($bookRequest->created_at)->format('m/d/Y - g:i A'),
+                'expiration_at_raw'  => optional($bookRequest->expiration_at)->format('Y-m-d'),
+                'completed_file'     => $bookRequest->completed_file
                     ? asset('storage/' . $bookRequest->completed_file)
                     : null,
-                'student_name'   => $bookRequest->user->name ?? 'Unknown',
-                'student_email'  => $bookRequest->user->email ?? 'N/A',
-                'book_title'     => $book->title ?? 'Unknown Book',
-                'book_author'    => $book->author ?? 'N/A',
-                'book_category'  => $book->category->name ?? 'N/A',
-                'book_year'      => $book->year_published ?? 'N/A',
-                'book_isbn'      => $book->isbn ?? 'N/A',
-                'cover_url'      => $book?->cover_path
+                'student_name'       => $bookRequest->user->name ?? 'Unknown',
+                'student_email'      => $bookRequest->user->email ?? 'N/A',
+                'book_title'         => $book->title ?? 'Unknown Book',
+                'book_author'        => $book->author ?? 'N/A',
+                'book_category'      => $book->category->name ?? 'N/A',
+                'book_year'          => $book->year_published ?? 'N/A',
+                'book_isbn'          => $book->isbn ?? 'N/A',
+                'cover_url'          => $book?->cover_path
                     ? asset('storage/' . $book->cover_path)
                     : null,
             ],
